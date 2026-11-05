@@ -27,7 +27,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
          > /entrypoint.sh \
     && chmod 755 /entrypoint.sh
 
-COPY osu_server.py overlay.html ./
+COPY osu_server.py overlay.html home.html ./
 
 EXPOSE 8727
 
