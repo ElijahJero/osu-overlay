@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>osu overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#100818;
+  --bg-2:#1c1030;
+  --pink:#ff66ab;
+  --text:#f6f1ff;
+  --muted:#b5a4d2;
+  --line:rgba(255,255,255,.08);
+  --up:#3ddea0;
+  --gold:#ffd56a;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  min-height:100vh;color:var(--text);
+  font-family:"Exo 2",system-ui,sans-serif;
+  background:
+    radial-gradient(900px 420px at 0% -10%, rgba(255,102,171,.16), transparent 60%),
+    radial-gradient(700px 380px at 100% 0%, rgba(61,222,160,.08), transparent 55%),
+    var(--bg);
+}
+a{color:var(--pink);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:#ff8cbe}
+.wrap{width:min(1000px,calc(100% - 32px));margin:0 auto;padding:28px 0 72px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:36px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand span{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--pink)}
+.brand strong{font-size:20px;font-weight:800}
+.ghost{
+  display:inline-flex;align-items:center;padding:10px 14px;border-radius:999px;
+  border:1px solid var(--line);color:var(--text);text-decoration:none;font-weight:700;font-size:14px;
+  background:rgba(255,255,255,.03);
+}
+.ghost:hover{border-color:rgba(255,102,171,.45);color:var(--text)}
+h1{margin:0 0 12px;font-size:clamp(36px,6vw,58px);line-height:.95;letter-spacing:-.03em}
+.lede{max-width:640px;margin:0;color:var(--muted);font-size:18px;line-height:1.5}
+.layout{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:18px;margin-top:32px}
+.card{
+  background:linear-gradient(180deg,var(--bg-2),#140c24);
+  border:1px solid var(--line);border-radius:18px;
+  box-shadow:0 18px 50px rgba(0,0,0,.28);
+}
+form.card{padding:22px}
+.card h2{margin:0 0 6px;font-size:20px}
+.hint{margin:0 0 18px;color:var(--muted);line-height:1.45;font-size:14px}
+label{display:block;margin:14px 0 6px;font-size:13px;font-weight:700;color:var(--muted)}
+input[type="text"],select{
+  width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);color:var(--text);font:inherit;font-weight:600;
+}
+input[type="text"]:focus,select:focus{outline:2px solid rgba(255,102,171,.7);outline-offset:1px}
+.check{display:flex;gap:10px;align-items:flex-start;margin:16px 0 8px;font-weight:600}
+.check input{margin-top:3px;accent-color:var(--pink)}
+.err{min-height:1.2em;margin:6px 0 0;color:#ff8d9a;font-size:13px;font-weight:600}
+.urlrow{margin-top:16px}
+#url{
+  width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+  background:rgba(0,0,0,.25);color:var(--text);font:600 14px/1.4 ui-monospace,monospace;
+}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+button{
+  appearance:none;border:0;border-radius:12px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer;
+}
+button:disabled{opacity:.45;cursor:not-allowed}
+#copy{background:var(--pink);color:#2a0a18}
+#copy:hover:not(:disabled){filter:brightness(1.05)}
+#open{background:transparent;color:var(--text);border:1px solid var(--line)}
+#open:hover:not(:disabled){border-color:rgba(255,102,171,.45)}
+aside.card{padding:22px}
+.sample{
+  margin-top:14px;padding:14px 16px 13px;border-radius:16px;
+  background:linear-gradient(180deg,#24143a,#160d26);
+  border:1px solid var(--line);border-left:3px solid var(--pink);
+}
+.sample .mode{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sample .name{font-weight:800;font-size:18px}
+.sample .rank{margin:8px 0 6px;font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.sample .rank span{color:var(--pink);font-size:.55em;margin-right:2px}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.06);font-size:12px;font-weight:700;color:var(--muted)}
+.pill strong{color:var(--text);font-weight:700}
+.score{
+  margin-top:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.04);
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
+}
+.score b{display:block;font-size:14px}
+.score small{color:var(--muted)}
+.score em{font-style:normal;color:var(--gold);font-weight:800}
+ul.points{margin:14px 0 0;padding:0;list-style:none}
+ul.points li{margin:0;padding:10px 0;border-top:1px solid var(--line);line-height:1.4}
+ul.points strong{display:block}
+ul.points span{color:var(--muted);font-size:14px}
+.steps{margin-top:18px;padding:8px 22px 6px}
+.steps h2{margin:16px 0 0}
+ol{margin:8px 0 18px;padding:0;list-style:none;counter-reset:step}
+ol li{
+  counter-increment:step;display:grid;grid-template-columns:36px 1fr;gap:12px;
+  align-items:start;padding:14px 0;border-top:1px solid var(--line);line-height:1.45;color:var(--muted);
+}
+ol li::before{
+  content:counter(step);width:36px;height:36px;border-radius:50%;
+  display:grid;place-items:center;font-weight:800;color:#2a0a18;background:var(--pink);
+}
+ol strong{color:var(--text)}
+.tosu{margin-top:18px;padding:22px;border-left:3px solid var(--pink)}
+.tosu h2{margin:0 0 8px}
+.tosu p{margin:0;color:var(--muted);line-height:1.5}
+.tosu p + p{margin-top:10px}
+@media (max-width:800px){
+  .layout{grid-template-columns:1fr}
+  header{align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><span>for OBS</span><strong>osu overlay</strong></div>
+    <a class="ghost" id="demo" href="/demo">Watch a preview</a>
+  </header>
+
+  <h1>Your rank, on stream.</h1>
+  <p class="lede">A transparent overlay for your osu! name. It shows global rank, rank changes, and your latest score. While you play, OBS can also show the map from tosu on that computer.</p>
+
+  <div class="layout">
+    <form class="card" id="maker">
+      <h2>Make your link</h2>
+      <p class="hint">Use the name from your osu! profile. The link is the whole setup.</p>
+      <label for="user">osu! username</label>
+      <input id="user" type="text" name="user" maxlength="15" autocomplete="off" spellcheck="false" placeholder="peppy" required>
+      <label for="mode">Mode</label>
+      <select id="mode" name="mode">
+        <option value="osu">osu!standard</option>
+        <option value="taiko">osu!taiko</option>
+        <option value="fruits">osu!catch</option>
+        <option value="mania">osu!mania</option>
+      </select>
+      <label class="check"><input id="live" type="checkbox" checked> Show the map I’m playing in OBS</label>
+      <p class="err" id="err" role="alert"></p>
+      <div class="urlrow">
+        <label for="url">Browser source URL</label>
+        <input id="url" type="text" readonly value="" aria-describedby="err">
+      </div>
+      <div class="actions">
+        <button id="copy" type="submit" disabled>Copy link</button>
+        <button id="open" type="button" disabled>Open overlay</button>
+      </div>
+    </form>
+
+    <aside class="card">
+      <h2>What appears</h2>
+      <p class="hint">The page background stays clear, so in OBS you only see the cards.</p>
+      <div class="sample" aria-hidden="true">
+        <div class="mode">standard</div>
+        <div class="name">your name</div>
+        <div class="rank"><span>#</span>12,408</div>
+        <div class="pills">
+          <span class="pill">US <strong>#842</strong></span>
+          <span class="pill"><strong>8,420</strong>pp</span>
+          <span class="pill"><strong>98.40%</strong></span>
+        </div>
+      </div>
+      <div class="score" aria-hidden="true">
+        <div><b>Latest score</b><small>grade, accuracy, and pp</small></div>
+        <em>412pp</em>
+      </div>
+      <ul class="points">
+        <li><strong>Rank</strong><span>Global rank, country rank, pp, and accuracy. The number ticks when you gain or lose a rank.</span></li>
+        <li><strong>Latest score</strong><span>Your most recent pass, including whether it is a new top play.</span></li>
+        <li><strong>Live map</strong><span>The map you are playing right now, from tosu on the streaming PC.</span></li>
+      </ul>
+    </aside>
+  </div>
+
+  <section class="card steps">
+    <h2>Add it to OBS</h2>
+    <ol>
+      <li><div><strong>Copy the link above.</strong> Standard has no extra path. Taiko, catch, and mania add one, such as <span id="mode-example"></span>.</div></li>
+      <li><div><strong>Add a Browser source.</strong> Paste the link, set the size to 1920×1080, and leave Local file unchecked. Uncheck “Shutdown source when not visible” so the overlay stays connected when you change scenes.</div></li>
+      <li><div><strong>Leave tosu running if you want the map.</strong> Rank and scores update on their own. The map panel is optional.</div></li>
+    </ol>
+  </section>
+
+  <section class="card tosu">
+    <h2>tosu stays on your PC</h2>
+    <p>The live map is not fetched by this website. <a href="https://github.com/tosuapp/tosu">tosu</a> runs next to osu! and listens on this computer at <code>127.0.0.1:24050</code>. An OBS browser source is allowed to open that local connection, including when this page is served over https.</p>
+    <p>A normal browser tab is not. Firefox and Chrome block an https page from talking to tosu, so opening the link yourself shows rank and scores only. Play a map with the OBS source active and the map panel shows up in the corner.</p>
+  </section>
+</div>
+<script>
+const userEl = document.getElementById("user");
+const modeEl = document.getElementById("mode");
+const liveEl = document.getElementById("live");
+const urlEl = document.getElementById("url");
+const errEl = document.getElementById("err");
+const copyBtn = document.getElementById("copy");
+const openBtn = document.getElementById("open");
+const USER_RE = /^[A-Za-z0-9_\[\] -]{2,15}$/;
+
+function overlayUrl(){
+  const user = userEl.value.trim();
+  if(!user){
+    errEl.textContent = "";
+    return null;
+  }
+  if(!USER_RE.test(user)){
+    errEl.textContent = "Use 2–15 characters: letters, numbers, spaces, and _ [ ] -.";
+    return null;
+  }
+  errEl.textContent = "";
+  let url = location.origin + "/" + encodeURIComponent(user);
+  if(modeEl.value !== "osu") url += "/" + modeEl.value;
+  if(!liveEl.checked) url += "?live=0";
+  return url;
+}
+
+function refresh(){
+  const url = overlayUrl();
+  urlEl.value = url || "";
+  copyBtn.disabled = !url;
+  openBtn.disabled = !url;
+  const typed = userEl.value.trim();
+  const sample = USER_RE.test(typed) ? typed : "yourname";
+  document.getElementById("mode-example").textContent = location.origin + "/" + encodeURIComponent(sample) + "/taiko";
+}
+
+document.getElementById("maker").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const url = overlayUrl();
+  if(!url) return;
+  let copied = false;
+  try {
+    await navigator.clipboard.writeText(url);
+    copied = true;
+  } catch {
+    urlEl.focus();
+    urlEl.select();
+    copied = document.execCommand("copy");
+  }
+  copyBtn.textContent = copied ? "Copied" : "Select the link and copy it";
+  setTimeout(() => { copyBtn.textContent = "Copy link"; }, 1600);
+});
+
+openBtn.addEventListener("click", () => {
+  const url = overlayUrl();
+  if(url) window.open(url, "_blank", "noopener");
+});
+
+["input", "change"].forEach(type => {
+  userEl.addEventListener(type, refresh);
+  modeEl.addEventListener(type, refresh);
+  liveEl.addEventListener(type, refresh);
+});
+document.getElementById("demo").href = location.origin + "/demo";
+refresh();
+</script>
+</body>
+</html>

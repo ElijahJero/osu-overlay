@@ -502,7 +502,8 @@ const push = ev => {
 };
 
 function connect(loc){
-  const ws = new WebSocket(`ws://${location.host}/ws/${encodeURIComponent(loc.user)}/${loc.mode}`);
+  const scheme = location.protocol === "https:" ? "wss" : "ws";
+  const ws = new WebSocket(`${scheme}://${location.host}/ws/${encodeURIComponent(loc.user)}/${loc.mode}`);
   ws.onmessage = e => {
     const ev = JSON.parse(e.data);
     if(ev.type === "live") renderLive(ev);
@@ -599,8 +600,19 @@ function parseTosu(data){
     cover: `http://${TOSU_HOST}/files/beatmap/background?b=${id}`,
   };
 }
+let tosuStarted = false;
+function tosuEnabled(){
+  const live = new URLSearchParams(location.search).get("live");
+  if(live === "0") return false;
+  if(live === "1") return true;
+  // https pages may not open ws://127.0.0.1. OBS browser sources can, and they
+  // expose window.obsstudio. A normal tab stays quiet instead of retrying forever.
+  if(location.protocol !== "https:") return true;
+  return typeof window.obsstudio !== "undefined";
+}
 function connectTosu(){
-  if(location.protocol === "https:") return;
+  if(tosuStarted || !tosuEnabled()) return false;
+  tosuStarted = true;
   let last = "";
   const open = () => {
     const ws = new WebSocket(`ws://${TOSU_HOST}/websocket/v2`);
@@ -617,6 +629,15 @@ function connectTosu(){
     ws.onerror = () => ws.close();
   };
   open();
+  return true;
+}
+function armTosu(){
+  if(connectTosu()) return;
+  let tries = 0;
+  const timer = setInterval(() => {
+    tries += 1;
+    if(connectTosu() || tries >= 8) clearInterval(timer);
+  }, 250);
 }
 
 function songFrom(art){
@@ -691,7 +712,7 @@ if(loc.demo){
   $("#uname").textContent = loc.user;
   document.title = `${loc.user} · osu overlay`;
   connect(loc);
-  connectTosu();
+  armTosu();
 }else{
   document.body.classList.add("waiting");
 }

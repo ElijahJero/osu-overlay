@@ -13,6 +13,10 @@ avatar the first time it is opened, then reuses those files.
   Modes: osu (standard), taiko, fruits (catch), mania.
   Animation preview: http://localhost:8727/demo
 
+  A public https URL works the same way. Inside an OBS browser source the
+  live map still comes from tosu on that computer. A normal browser tab on
+  https shows rank and scores only. Add ?live=0 to hide the map panel.
+
 Install:  pip install -r requirements.txt
 Run:      python osu_server.py
 
@@ -477,49 +481,8 @@ async def index(_request):
     return web.FileResponse(HERE / "overlay.html")
 
 
-LANDING = """<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>osu overlay</title>
-<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;700;800&display=swap" rel="stylesheet">
-<style>
-:root{--pink:#ff66ab;--muted:#b5a4d2;--text:#f6f1ff}
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;
-  background:#100818;color:var(--text);font-family:"Exo 2",system-ui,sans-serif}
-.card{width:min(560px,calc(100vw - 32px));padding:28px 28px 24px;border-radius:18px;
-  background:linear-gradient(180deg,#1c1030,#140c24);border:1px solid rgba(255,255,255,.08);
-  border-left:3px solid var(--pink);box-shadow:0 18px 50px rgba(0,0,0,.45)}
-h1{margin:0;font-size:28px}
-p{color:var(--muted);line-height:1.45}
-code{display:block;margin:8px 0 14px;padding:10px 12px;border-radius:10px;
-  background:rgba(255,255,255,.05);color:var(--text);font-family:ui-monospace,monospace;font-size:14px}
-a{color:var(--pink)}
-</style>
-</head>
-<body>
-<main class="card">
-  <h1>osu overlay</h1>
-  <p>Add a browser source in OBS at 1920×1080 with a transparent background. Put the player name in the URL — nothing is hardcoded.</p>
-  <code id="user"></code>
-  <p>Other modes use a second path segment: <code id="mode"></code></p>
-  <p>Preview rank up, rank down, and a live panel: <a id="demo" href="/demo">/demo</a></p>
-  <p>The top-right panel reads tosu on the computer running OBS, not on this server. Keep the overlay URL on http, and leave tosu running locally.</p>
-</main>
-<script>
-const base = location.origin;
-document.getElementById("user").textContent = base + "/YourName";
-document.getElementById("mode").textContent = base + "/YourName/taiko";
-document.getElementById("demo").href = base + "/demo";
-</script>
-</body>
-</html>
-"""
-
-
 async def landing(_request):
-    return web.Response(text=LANDING, content_type="text/html")
+    return web.FileResponse(HERE / "home.html")
 
 
 async def main():
