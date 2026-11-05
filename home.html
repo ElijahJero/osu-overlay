@@ -193,6 +193,7 @@ ol strong{color:var(--text)}
     <h2>tosu stays on your PC</h2>
     <p>The live map is not fetched by this website. <a href="https://github.com/tosuapp/tosu">tosu</a> runs next to osu! and listens on this computer at <code>127.0.0.1:24050</code>. An OBS browser source is allowed to open that local connection, including when this page is served over https.</p>
     <p>A normal browser tab is not. Firefox and Chrome block an https page from talking to tosu, so opening the link yourself shows rank and scores only. Play a map with the OBS source active and the map panel shows up in the corner.</p>
+    <p>In <code>tosu.env</code>, add <code>osulay.galaxystudios.moe</code> to <code>ALLOWED_IPS</code>. tosu blocks the live map until that host is on the list.</p>
   </section>
 </div>
 <script>
