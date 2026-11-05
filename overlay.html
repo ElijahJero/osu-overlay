@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>osu overlay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#140c24;
+  --bg-2:#1c1030;
+  --pink:#ff66ab;
+  --up:#3ddea0;
+  --down:#ff5d73;
+  --text:#f6f1ff;
+  --muted:#b5a4d2;
+  --gold:#ffd56a;
+  --silver:#d5d8e6;
+  --line:rgba(255,255,255,.08);
+  --digit:64px;
+  --digit-w:1ch;
+  --comma-w:.45ch;
+}
+*{box-sizing:border-box;margin:0}
+html,body{
+  width:100%;height:100%;overflow:hidden;background:transparent;color:var(--text);
+  font-family:"Exo 2",system-ui,sans-serif;
+  font-variant-numeric:tabular-nums;
+  text-rendering:geometricPrecision;
+}
+
+/* ---------- rank card ---------- */
+#rank{
+  position:absolute;left:28px;top:28px;
+  width:max-content;max-width:calc(100vw - 56px);
+  padding:14px 18px 13px;
+  background:linear-gradient(180deg,var(--bg-2),var(--bg));
+  border-radius:16px;
+  border:1px solid var(--line);
+  border-left:3px solid var(--pink);
+  box-shadow:0 14px 36px rgba(0,0,0,.38);
+  transition:border-color .3s,box-shadow .3s;
+}
+#rank.up{border-left-color:var(--up);box-shadow:0 0 0 1px rgba(61,222,160,.35),0 14px 36px rgba(0,0,0,.38)}
+#rank.down{border-left-color:var(--down);box-shadow:0 0 0 1px rgba(255,93,115,.35),0 14px 36px rgba(0,0,0,.38)}
+
+.head{display:flex;align-items:center;gap:10px;min-height:36px}
+#avatar{
+  width:36px;height:36px;border-radius:50%;object-fit:cover;display:block;flex:none;
+  box-shadow:0 0 0 2px rgba(255,102,171,.7);
+}
+#avatar[hidden]{display:none}
+.idblock{min-width:0}
+.label{
+  font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);line-height:1;
+}
+.uname{
+  margin-top:3px;font-size:16px;font-weight:800;line-height:1.1;
+  max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.row{display:flex;align-items:center;margin-top:8px;min-height:var(--digit)}
+.rankline{display:flex;align-items:flex-end;flex:none}
+.hash{
+  font-size:calc(var(--digit) * .36);
+  font-weight:800;line-height:1;color:var(--pink);
+  margin:0 4px calc(var(--digit) * .045) 0;
+}
+#num{
+  display:flex;align-items:flex-end;
+  height:1em;font-size:var(--digit);font-weight:800;line-height:1;
+  overflow:hidden;transition:color .4s;
+}
+#num.plain{height:auto;overflow:visible}
+#rank.up #num{color:var(--up)}
+#rank.down #num{color:var(--down)}
+.unranked{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--muted)}
+
+.col{height:1em;width:var(--digit-w);overflow:hidden;flex:none}
+.strip{display:flex;flex-direction:column;transition:transform 1.15s cubic-bezier(.15,.85,.2,1)}
+.strip span{
+  display:flex;align-items:center;justify-content:center;
+  height:1em;width:var(--digit-w);flex:none;
+  font-variant-numeric:tabular-nums;
+  font-feature-settings:"tnum" 1;
+}
+.sep{
+  display:flex;align-items:center;justify-content:center;
+  height:1em;width:var(--comma-w);flex:none;
+  color:rgba(246,241,255,.72);
+}
+
+#delta{
+  position:absolute;left:calc(100% + 12px);top:50%;
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  height:34px;padding:0 12px;border-radius:999px;
+  font-size:18px;font-weight:800;line-height:1;white-space:nowrap;
+  opacity:0;transform:translate(8px,-40%);
+  transition:opacity .35s,transform .45s cubic-bezier(.3,1.6,.5,1);
+  pointer-events:none;
+}
+#delta svg{display:block;flex:none}
+#delta path{fill:currentColor}
+#delta.show{opacity:1;transform:translate(0,-50%)}
+#delta.up{background:var(--up);color:#08281c}
+#delta.down{background:var(--down);color:#2c0c12}
+
+.meta{display:flex;align-items:center;gap:8px;margin-top:10px;min-height:28px}
+.pill{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  height:28px;padding:0 10px;border-radius:999px;
+  background:rgba(255,255,255,.06);
+  font-size:14px;font-weight:700;line-height:1;white-space:nowrap;
+}
+.pill[hidden]{display:none}
+.pill.pp{color:var(--pink)}
+.pill.acc{color:var(--muted);font-weight:600}
+.flag{
+  width:18px;height:12px;object-fit:cover;display:block;flex:none;border-radius:2px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.2);
+}
+.flag[hidden]{display:none}
+
+/* ---------- map card ---------- */
+#play{
+  position:absolute;left:28px;bottom:28px;width:min(660px,calc(100vw - 56px));height:164px;
+  border-radius:16px;overflow:hidden;background:var(--bg);
+  border:1px solid var(--line);border-left:3px solid var(--pink);
+  box-shadow:0 14px 36px rgba(0,0,0,.4);
+  transform:translateX(calc(-100% - 48px));
+  transition:transform .7s cubic-bezier(.2,.9,.2,1);
+}
+#play.in{transform:none}
+.art{position:absolute;inset:0;background-size:cover;background-position:center}
+.art::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,rgba(16,8,28,.97) 0%,rgba(16,8,28,.9) 38%,rgba(16,8,28,.62) 68%,rgba(16,8,28,.34) 100%);
+}
+.body{position:relative;display:flex;align-items:center;gap:16px;height:100%;padding:0 18px 0 16px}
+#grade{
+  width:86px;height:86px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:16px;background:rgba(255,255,255,.05);
+  font-size:46px;font-weight:800;line-height:1;letter-spacing:-.04em;color:var(--muted);
+}
+#grade[data-g="SS"]{color:var(--gold);font-size:40px}
+#grade[data-g="SSH"]{color:var(--silver);font-size:40px}
+#grade[data-g="S"]{color:#fff}
+#grade[data-g="SH"]{color:var(--silver)}
+#grade[data-g="A"]{color:var(--up)}
+#grade[data-g="B"]{color:#6db8ff}
+#grade[data-g="C"]{color:#c59bff}
+#grade[data-g="D"]{color:var(--down)}
+
+.info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+#title{font-size:22px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#artist{margin-top:2px;font-size:14px;font-weight:600;line-height:1.2;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#diffrow{display:flex;align-items:center;gap:8px;min-width:0;margin-top:3px}
+#diff{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:15px;font-weight:600}
+#stars{
+  display:inline-flex;align-items:center;gap:4px;flex:none;
+  color:var(--gold);font-size:15px;font-weight:800;line-height:1;
+}
+#stars svg{display:block;flex:none}
+#stars path{fill:currentColor}
+#stats{display:flex;align-items:center;gap:8px;margin-top:10px;min-height:26px}
+.stat{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:26px;padding:0 8px;border-radius:8px;
+  background:rgba(0,0,0,.32);font-size:15px;font-weight:700;line-height:1;
+}
+#mods{display:inline-flex;align-items:center;gap:4px}
+#mods:empty{display:none}
+.mod{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:28px;height:22px;padding:0 6px;border-radius:6px;
+  background:rgba(255,255,255,.1);
+  font-size:12px;font-weight:800;letter-spacing:.04em;line-height:1;
+}
+.right{
+  width:148px;flex:none;
+  display:flex;flex-direction:column;align-items:flex-end;justify-content:center;gap:6px;
+}
+#pp{font-size:32px;font-weight:800;line-height:1;color:var(--pink);font-variant-numeric:tabular-nums}
+#badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:24px;padding:0 10px;border-radius:999px;
+  background:var(--pink);color:#2a0f1c;
+  font-size:12px;font-weight:800;line-height:1;white-space:nowrap;
+}
+#badge.none{background:rgba(255,255,255,.1);color:var(--muted)}
+#badge.first{background:var(--gold);color:#3a2a00;animation:pulse .9s ease-in-out 4}
+
+/* ---------- live play, top right ---------- */
+#live{
+  position:absolute;right:28px;top:28px;width:min(430px,calc(100vw - 56px));height:168px;
+  border-radius:16px;overflow:hidden;background:var(--bg);
+  border:1px solid var(--line);border-right:3px solid var(--pink);
+  box-shadow:0 14px 36px rgba(0,0,0,.4);
+  transform:translateX(calc(100% + 48px));
+  transition:transform .55s cubic-bezier(.2,.9,.2,1);
+}
+#live.on{transform:none}
+#live .right{width:108px}
+#live.fail{border-right-color:var(--down)}
+#live .body{padding:0 14px 8px 12px;gap:12px}
+#live-grade{
+  width:64px;height:64px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:14px;background:rgba(255,255,255,.06);
+  font-size:28px;font-weight:800;line-height:1;color:var(--muted);
+}
+#live-grade[data-g="SS"],#live-grade[data-g="X"]{color:var(--gold);font-size:22px}
+#live-grade[data-g="SSH"],#live-grade[data-g="XH"],#live-grade[data-g="SH"]{color:var(--silver);font-size:22px}
+#live-grade[data-g="S"]{color:#fff}
+#live-grade[data-g="A"]{color:var(--up)}
+#live-grade[data-g="B"]{color:#6db8ff}
+#live-grade[data-g="C"]{color:#c59bff}
+#live-grade[data-g="D"]{color:var(--down)}
+#live-phase{color:var(--pink)}
+#live.fail #live-phase{color:var(--down)}
+#live-title{margin-top:4px;font-size:18px;font-weight:800;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#live-artist{margin-top:2px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#live-diffrow{display:flex;align-items:center;gap:8px;min-width:0;margin-top:2px}
+#live-diff{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:13px;font-weight:600}
+#live-stars{display:inline-flex;align-items:center;gap:4px;flex:none;color:var(--gold);font-size:13px;font-weight:800;line-height:1}
+#live-stars svg{display:block}
+#live-stars path{fill:currentColor}
+#live-stats{display:flex;align-items:center;gap:6px;margin-top:8px;min-height:26px}
+#live-mods{display:inline-flex;align-items:center;gap:4px}
+#live-mods:empty{display:none}
+#live-pp{font-size:26px;font-weight:800;line-height:1;color:var(--pink)}
+#live-fc{margin-top:4px;font-size:12px;font-weight:700;color:var(--muted);line-height:1}
+#live-hp{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.1)}
+#live-hp > span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff5d73,#ffd56a 55%,#3ddea0);background-size:390px 100%}
+@keyframes pulse{50%{transform:scale(1.08);box-shadow:0 0 18px rgba(255,213,106,.75)}}
+#status{
+  position:absolute;left:28px;top:28px;display:none;
+  padding:12px 16px;border-radius:12px;background:var(--bg);color:var(--muted);
+  border:1px solid var(--line);font-weight:700;
+}
+body.waiting #status{display:block}
+body.waiting #rank{display:none}
+@media (prefers-reduced-motion:reduce){
+  .strip,#play,#delta,#live{transition-duration:.01s}
+  #badge.first{animation:none}
+}
+</style>
+</head>
+<body>
+<div id="status">Add your osu! name to the URL. This server’s home page has the link.</div>
+
+<div id="rank">
+  <div class="head">
+    <img id="avatar" alt="" hidden>
+    <div class="idblock">
+      <div class="label" id="mode">standard</div>
+      <div class="uname" id="uname"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="rankline"><span class="hash">#</span><div id="num"></div></div>
+  </div>
+  <div class="meta">
+    <span class="pill" id="country" hidden><img class="flag" id="flag" alt="" width="18" height="12"><span id="crank"></span></span>
+    <span class="pill pp" id="pptotal" hidden></span>
+    <span class="pill acc" id="accstat" hidden></span>
+  </div>
+  <div id="delta"></div>
+</div>
+
+<div id="live">
+  <div class="art" id="live-art"></div>
+  <div class="body">
+    <div id="live-grade"></div>
+    <div class="info">
+      <div class="label" id="live-phase">Live</div>
+      <div id="live-title"></div>
+      <div id="live-artist"></div>
+      <div id="live-diffrow"><span id="live-diff"></span><span id="live-stars"></span></div>
+      <div id="live-stats"><span class="stat" id="live-combo"></span><span class="stat" id="live-acc"></span><span id="live-mods"></span></div>
+    </div>
+    <div class="right"><div id="live-pp"></div><div id="live-fc"></div></div>
+  </div>
+  <div id="live-hp"><span></span></div>
+</div>
+
+<div id="play">
+  <div class="art" id="art"></div>
+  <div class="body">
+    <div id="grade"></div>
+    <div class="info">
+      <div id="title"></div>
+      <div id="artist"></div>
+      <div id="diffrow">
+        <span id="diff"></span>
+        <span id="stars"></span>
+      </div>
+      <div id="stats"><span class="stat" id="acc"></span><span class="stat" id="combo"></span><span id="mods"></span></div>
+    </div>
+    <div class="right"><div id="pp"></div><div id="badge"></div></div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => Number(n).toLocaleString("en-US");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const MODES = {osu:"standard", taiko:"taiko", fruits:"catch", mania:"mania"};
+const STAR = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 1.15 9.95 5.55l4.7.5-3.55 3.15.95 4.65L8 11.55 4 13.85l.95-4.65L1.4 6.05l4.7-.5Z"/></svg>';
+const ARROW = '<svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M6 1.4 11 10.6H1Z"/></svg>';
+
+function parseLocation(){
+  const q = new URLSearchParams(location.search);
+  const parts = location.pathname.split("/").filter(Boolean).map(decodeURIComponent);
+  const demo = q.has("demo") || parts[0] === "demo";
+  let mode = (q.get("mode") || "osu").toLowerCase();
+  let user = q.get("user");
+  if(!user && parts[0] && parts[0] !== "demo"){
+    user = parts[0];
+    if(parts[1]) mode = parts[1].toLowerCase();
+  }
+  if(mode === "catch") mode = "fruits";
+  if(!MODES[mode]) mode = "osu";
+  return {demo, user, mode};
+}
+
+/* ---- odometer: column width follows the real "0", so long ranks stay readable ---- */
+let shown = "";
+function measureDigits(){
+  const probe = document.createElement("span");
+  probe.style.cssText = "position:absolute;visibility:hidden;font-family:inherit;font-weight:800;font-size:var(--digit);font-variant-numeric:tabular-nums;font-feature-settings:'tnum' 1;line-height:1";
+  probe.textContent = "0";
+  document.body.appendChild(probe);
+  const digit = Math.ceil(probe.getBoundingClientRect().width);
+  probe.textContent = ",";
+  const comma = Math.ceil(probe.getBoundingClientRect().width);
+  probe.remove();
+  document.documentElement.style.setProperty("--digit-w", digit + "px");
+  document.documentElement.style.setProperty("--comma-w", Math.max(comma, digit * 0.38) + "px");
+}
+function applyScale(str){
+  const digits = (str.match(/\d/g) || []).length;
+  const size = digits <= 3 ? 76 : digits === 4 ? 68 : digits === 5 ? 60 : digits === 6 ? 52 : digits === 7 ? 46 : 40;
+  document.documentElement.style.setProperty("--digit", size + "px");
+  measureDigits();
+}
+function buildNum(str){
+  const num = $("#num");
+  num.innerHTML = "";
+  for(const ch of str){
+    if(/\d/.test(ch)){
+      const col = document.createElement("div");
+      col.className = "col";
+      const strip = document.createElement("div");
+      strip.className = "strip";
+      strip.style.transition = "none";
+      for(let i = 0; i < 10; i++){
+        const s = document.createElement("span");
+        s.textContent = i;
+        strip.appendChild(s);
+      }
+      strip.style.transform = `translateY(${-ch}em)`;
+      col.appendChild(strip);
+      num.appendChild(col);
+    }else{
+      const s = document.createElement("span");
+      s.className = "sep";
+      s.textContent = ch;
+      num.appendChild(s);
+    }
+  }
+  requestAnimationFrame(() => requestAnimationFrame(() =>
+    num.querySelectorAll(".strip").forEach(s => s.style.transition = "")));
+}
+function setRankDisplay(rank, roll){
+  const num = $("#num");
+  if(rank == null){
+    num.classList.add("plain");
+    num.innerHTML = '<span class="unranked">Unranked</span>';
+    shown = "";
+    return;
+  }
+  num.classList.remove("plain");
+  const str = fmt(rank);
+  applyScale(str);
+  if(str.length !== shown.length){
+    buildNum(str);
+    shown = str;
+    return;
+  }
+  const strips = [...document.querySelectorAll("#num .strip")];
+  let di = 0;
+  [...str].forEach(ch => {
+    if(!/\d/.test(ch)) return;
+    const strip = strips[di++];
+    if(!strip) return;
+    strip.style.transitionDelay = roll ? `${(strips.length - di) * 80}ms` : "0ms";
+    strip.style.transform = `translateY(${-ch}em)`;
+  });
+  shown = str;
+}
+
+function setIdentity(ev){
+  const mode = $("#mode");
+  mode.textContent = ev.mode ? (MODES[ev.mode] || ev.mode) : mode.textContent;
+  if(ev.username){
+    $("#uname").textContent = ev.username;
+    document.title = `${ev.username} · osu overlay`;
+  }
+  const avatar = $("#avatar");
+  if(ev.avatar){
+    avatar.src = ev.avatar;
+    avatar.hidden = false;
+  }
+  const country = $("#country");
+  if(ev.country_rank){
+    country.hidden = false;
+    const flag = $("#flag");
+    if(ev.country){
+      flag.hidden = false;
+      flag.src = `https://flagcdn.com/w40/${ev.country.toLowerCase()}.png`;
+      flag.onerror = () => { flag.hidden = true; };
+    }else flag.hidden = true;
+    $("#crank").textContent = `#${fmt(ev.country_rank)}`;
+  }else country.hidden = true;
+  const pp = $("#pptotal");
+  if(ev.pp != null){
+    pp.hidden = false;
+    pp.textContent = `${fmt(Math.round(ev.pp))}pp`;
+  }
+  const acc = $("#accstat");
+  if(ev.acc != null){
+    acc.hidden = false;
+    acc.textContent = `${Number(ev.acc).toFixed(2)}%`;
+  }
+}
+
+function statsEvent(ev){
+  setRankDisplay(ev.rank, false);
+  setIdentity(ev);
+}
+
+async function rankEvent(ev){
+  const up = ev.new < ev.old;
+  const cls = up ? "up" : "down";
+  const panel = $("#rank"), delta = $("#delta");
+  panel.classList.add(cls);
+  delta.className = cls;
+  delta.innerHTML = `${ARROW}<span>${fmt(Math.abs(ev.old - ev.new))}</span>`;
+  const arrow = delta.querySelector("svg");
+  if(!up) arrow.style.transform = "rotate(180deg)";
+  setRankDisplay(ev.rank, true);
+  setIdentity(ev);
+  await sleep(80);
+  delta.classList.add("show");
+  await sleep(6500);
+  delta.classList.remove("show");
+  panel.classList.remove("up", "down");
+  await sleep(500);
+}
+
+const GRADE = {X:["SS","SS"], XH:["SS","SSH"], S:["S","S"], SH:["S","SH"]};
+async function playEvent(ev){
+  fillPlay(ev);
+  await sleep(9500);
+  $("#play").classList.remove("in");
+  await sleep(800);
+}
+
+function errorEvent(ev){
+  $("#uname").textContent = ev.username || $("#uname").textContent;
+  $("#mode").textContent = ev.message || "Could not load this player";
+  setRankDisplay(null, false);
+  $("#num").innerHTML = '<span class="unranked">Not found</span>';
+}
+
+const rankQueue = [];
+const playQueue = [];
+let rankBusy = false;
+let playBusy = false;
+async function pumpRank(){
+  if(rankBusy) return;
+  rankBusy = true;
+  while(rankQueue.length){
+    const ev = rankQueue.shift();
+    if(ev.type === "rank") await rankEvent(ev);
+    else if(ev.type === "error") errorEvent(ev);
+    else statsEvent(ev);
+  }
+  rankBusy = false;
+}
+async function pumpPlay(){
+  if(playBusy) return;
+  playBusy = true;
+  while(playQueue.length) await playEvent(playQueue.shift());
+  playBusy = false;
+}
+const push = ev => {
+  if(ev.type === "play"){ playQueue.push(ev); pumpPlay(); }
+  else { rankQueue.push(ev); pumpRank(); }
+};
+
+function connect(loc){
+  const ws = new WebSocket(`ws://${location.host}/ws/${encodeURIComponent(loc.user)}/${loc.mode}`);
+  ws.onmessage = e => {
+    const ev = JSON.parse(e.data);
+    if(ev.type === "live") renderLive(ev);
+    else push(ev);
+  };
+  ws.onclose = () => setTimeout(() => connect(loc), 2000);
+}
+
+function paintMods(host, mods){
+  host.innerHTML = "";
+  (mods || []).filter(Boolean).forEach(m => {
+    const chip = document.createElement("span");
+    chip.className = "mod";
+    chip.textContent = m;
+    host.appendChild(chip);
+  });
+}
+function renderLive(ev){
+  const panel = $("#live");
+  if(!ev || !ev.active){
+    panel.classList.remove("on", "fail");
+    return;
+  }
+  panel.classList.add("on");
+  panel.classList.toggle("fail", !!ev.failed);
+  $("#live-phase").textContent = ev.failed ? "Failed" : (ev.phase === "result" ? "Result" : "Live");
+  $("#live-art").style.backgroundImage = ev.cover ? `url("${ev.cover}")` : "none";
+  const grade = $("#live-grade");
+  const g = ev.grade || "";
+  grade.textContent = g === "SSH" || g === "XH" ? "SS" : (g === "SH" ? "S" : g);
+  grade.dataset.g = g;
+  $("#live-title").textContent = ev.title || "";
+  $("#live-artist").textContent = ev.artist || "";
+  $("#live-diff").textContent = ev.diff || "";
+  $("#live-stars").innerHTML = ev.stars == null ? "" : `${STAR}<span>${Number(ev.stars).toFixed(2)}</span>`;
+  $("#live-combo").textContent = ev.combo == null ? "" : `${fmt(ev.combo)}x`;
+  $("#live-acc").textContent = ev.acc == null ? "" : `${Number(ev.acc).toFixed(2)}%`;
+  paintMods($("#live-mods"), ev.mods);
+  $("#live-pp").textContent = ev.pp == null ? "—" : `${fmt(Math.round(ev.pp))}pp`;
+  $("#live-fc").textContent = ev.fcpp == null ? "" : `fc ${fmt(Math.round(ev.fcpp))}pp`;
+  const raw = Number(ev.hp) || 0;
+  const pct = Math.max(0, Math.min(1, raw > 1 ? raw / 200 : raw));
+  $("#live-hp > span").style.width = `${pct * 100}%`;
+}
+
+const TOSU_HOST = "127.0.0.1:24050";
+function modList(mods){
+  if(!mods) return [];
+  if(typeof mods === "string"){
+    const cleaned = mods.toUpperCase();
+    if(!cleaned || cleaned === "NM" || cleaned === "NOMOD") return [];
+    return cleaned.match(/.{1,2}/g) || [];
+  }
+  if(Array.isArray(mods)){
+    return mods.map(m => typeof m === "string" ? m : (m && (m.acronym || m.name)) || "").filter(m => m && !/^(nm|nomod)$/i.test(m));
+  }
+  if(mods.array) return modList(mods.array);
+  return [];
+}
+function parseTosu(data){
+  const state = data.state || {};
+  const name = String(state.name || "").toLowerCase();
+  const number = state.number;
+  const playing = name === "play" || number === 2;
+  const results = name === "resultscreen" || name === "ranking" || number === 7;
+  if(!playing && !results) return {active:false};
+  const beatmap = data.beatmap || {};
+  const play = data.play || {};
+  const stars = ((beatmap.stats || {}).stars) || {};
+  const pp = play.pp || {};
+  const combo = play.combo || {};
+  const health = play.healthBar || {};
+  let acc = play.accuracy || 0;
+  if(acc > 0 && acc <= 1) acc *= 100;
+  let hp = health.smooth;
+  if(hp == null) hp = health.normal || 0;
+  const id = beatmap.id || 0;
+  return {
+    active:true,
+    phase: results ? "result" : "play",
+    failed: !!play.failed,
+    title: beatmap.title || "",
+    artist: beatmap.artist || "",
+    diff: beatmap.version || "",
+    stars: stars.live != null ? stars.live : stars.total,
+    combo: combo.current || 0,
+    acc,
+    pp: pp.current,
+    fcpp: pp.fc,
+    hp,
+    grade: String((play.rank || {}).current || "").toUpperCase(),
+    mods: modList(play.mods),
+    beatmap_id: id,
+    cover: `http://${TOSU_HOST}/files/beatmap/background?b=${id}`,
+  };
+}
+function connectTosu(){
+  if(location.protocol === "https:") return;
+  let last = "";
+  const open = () => {
+    const ws = new WebSocket(`ws://${TOSU_HOST}/websocket/v2`);
+    ws.onmessage = e => {
+      let data;
+      try { data = JSON.parse(e.data); } catch { return; }
+      const ev = parseTosu(data);
+      const sig = JSON.stringify([ev.active, ev.beatmap_id, ev.diff, ev.combo, ev.grade, Math.round((ev.pp || 0) * 10), Math.round((ev.acc || 0) * 100), Math.round((ev.hp || 0) * 1000), ev.failed, ev.phase, (ev.mods || []).join()]);
+      if(sig === last) return;
+      last = sig;
+      renderLive(ev);
+    };
+    ws.onclose = () => setTimeout(open, 3000);
+    ws.onerror = () => ws.close();
+  };
+  open();
+}
+
+function songFrom(art){
+  return {
+    title: art.title || "Freedom Dive",
+    artist: art.artist || "xi",
+    diff: art.diff || "",
+    stars: art.stars,
+    cover: art.cover || "",
+  };
+}
+function runDemo(art, rank){
+  const base = {
+    username: art.username || "OnlyGalaxy",
+    country: art.country || "US",
+    country_rank: art.country_rank || 4210,
+    pp: art.pp || 540,
+    acc: art.acc || 98.4,
+    mode: "osu",
+    avatar: art.avatar || "",
+  };
+  const song = songFrom(art);
+  const start = Number(rank || art.rank || 1284503);
+  push({type:"stats", rank:start, ...base});
+  const play = {...song, grade:"S", acc:98.72, combo:2144, pp:412, mods:["HD","HR"], pos:3};
+  if(rank){
+    push({type:"play", ...play});
+    renderLive({type:"live", active:true, phase:"play", ...song, grade:"S", acc:98.72, combo:860, max_combo:2400, pp:280, fcpp:340, hp:0.78, mods:["HD","HR"]});
+    return;
+  }
+  fillPlay(play);
+  renderLive({type:"live", active:true, phase:"play", ...song, grade:"S", acc:97.4, combo:640, max_combo:2400, pp:248, fcpp:336, hp:0.82, mods:["HD","HR"]});
+  const gained = Math.max(1, start - 1480);
+  const lost = gained + 2360;
+  setTimeout(() => {
+    push({type:"rank", old:start, new:gained, rank:gained, ...base, pp:(base.pp || 0) + 8});
+    push({type:"rank", old:gained, new:lost, rank:lost, ...base, pp:(base.pp || 0) - 3});
+  }, 700);
+  setTimeout(() => $("#play").classList.remove("in"), 17000);
+}
+function fillPlay(ev){
+  const mapped = GRADE[ev.grade] || [ev.grade, ev.grade];
+  $("#art").style.backgroundImage = ev.cover ? `url("${ev.cover}")` : "none";
+  const grade = $("#grade");
+  grade.textContent = mapped[0];
+  grade.dataset.g = mapped[1];
+  $("#title").textContent = ev.title || "";
+  $("#artist").textContent = ev.artist || "";
+  $("#diff").textContent = ev.diff || "";
+  $("#stars").innerHTML = ev.stars == null ? "" : `${STAR}<span>${Number(ev.stars).toFixed(2)}</span>`;
+  $("#acc").textContent = ev.acc == null ? "" : `${Number(ev.acc).toFixed(2)}%`;
+  $("#combo").textContent = ev.combo == null ? "" : `${fmt(ev.combo)}x`;
+  paintMods($("#mods"), ev.mods);
+  $("#pp").textContent = ev.pp == null ? "—" : `${fmt(Math.round(ev.pp))}pp`;
+  const b = $("#badge");
+  if(ev.pos === 1){ b.className = "first"; b.textContent = "New #1"; }
+  else if(ev.pos){ b.className = ""; b.textContent = `Your #${ev.pos}`; }
+  else if(ev.pos_kind === "replay"){ b.className = "none"; b.textContent = "Not a new best"; }
+  else if(ev.pos_kind === "unranked"){ b.className = "none"; b.textContent = "No pp"; }
+  else { b.className = "none"; b.textContent = "Outside top 100"; }
+  $("#play").classList.add("in");
+}
+
+document.fonts.ready.then(() => { if(shown){ const s = shown; shown = ""; setRankDisplay(Number(s.replace(/,/g, "")), false); } });
+
+const loc = parseLocation();
+if(loc.demo){
+  const preview = new URLSearchParams(location.search).get("rank");
+  fetch("/api/demo").then(r => r.json()).then(art => runDemo(art || {}, preview)).catch(() => runDemo({}, preview));
+}else if(loc.user && location.protocol.startsWith("http")){
+  $("#mode").textContent = MODES[loc.mode];
+  $("#uname").textContent = loc.user;
+  document.title = `${loc.user} · osu overlay`;
+  connect(loc);
+  connectTosu();
+}else{
+  document.body.classList.add("waiting");
+}
+</script>
+</body>
+</html>

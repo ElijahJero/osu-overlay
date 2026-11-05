@@ -1,0 +1,17 @@
+services:
+  overlay:
+    image: ghcr.io/elijahjero/osu-overlay:latest
+    build: .
+    ports:
+      - "8727:8727"
+    environment:
+      OSU_HOST: "0.0.0.0"
+      OSU_PORT: "8727"
+      OSU_CLIENT_ID: ${OSU_CLIENT_ID:-60688}
+      OSU_CLIENT_SECRET: ${OSU_CLIENT_SECRET:-}
+    restart: unless-stopped
+    volumes:
+      - cache:/app/cache
+
+volumes:
+  cache:
