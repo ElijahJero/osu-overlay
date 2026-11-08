@@ -245,6 +245,78 @@ body.waiting #rank{display:none}
   .strip,#play,#delta,#live{transition-duration:.01s}
   #badge.first{animation:none}
 }
+
+/* Christmas: pine cards, cranberry and gold, lights and snow on the cards only */
+html.christmas{
+  --bg:#122018;
+  --bg-2:#1c3024;
+  --pink:#e23d4a;
+  --gold:#f3c15a;
+  --text:#f7f3ea;
+  --muted:#c9d5c6;
+  --line:rgba(243,193,90,.22);
+}
+html.christmas #rank,
+html.christmas #play,
+html.christmas #live{
+  background:linear-gradient(180deg,#2a4032,#142018);
+  box-shadow:0 16px 36px rgba(0,0,0,.42), inset 0 0 0 1px rgba(243,193,90,.1);
+}
+html.christmas #rank,
+html.christmas #play{border-left-color:#e23d4a}
+html.christmas #live{border-right-color:#f3c15a}
+html.christmas #rank.up{border-left-color:var(--up);box-shadow:0 0 0 1px rgba(61,222,160,.35),0 14px 36px rgba(0,0,0,.38)}
+html.christmas #rank.down{border-left-color:var(--down);box-shadow:0 0 0 1px rgba(255,93,115,.35),0 14px 36px rgba(0,0,0,.38)}
+html.christmas #live.fail{border-right-color:var(--down)}
+html.christmas #rank{padding-top:18px}
+html.christmas .art::after{
+  background:linear-gradient(90deg,rgba(14,26,18,.97) 0%,rgba(14,26,18,.9) 38%,rgba(14,26,18,.6) 68%,rgba(14,26,18,.28) 100%);
+}
+html.christmas #avatar{box-shadow:0 0 0 2px rgba(226,61,74,.85), 0 0 0 4px rgba(243,193,90,.55)}
+html.christmas #badge{color:#2a1014}
+html.christmas #badge.first{color:#3a2a00}
+html.christmas #rank::before,
+html.christmas #play::before,
+html.christmas #live::before{
+  content:"";
+  position:absolute;left:16px;right:16px;top:5px;height:8px;z-index:4;pointer-events:none;
+  background:
+    radial-gradient(circle at 4px 4px, #e23d4a 0 2.5px, transparent 3.2px) 0 0 / 36px 8px repeat-x,
+    radial-gradient(circle at 16px 4px, #f3c15a 0 2.5px, transparent 3.2px) 0 0 / 36px 8px repeat-x,
+    radial-gradient(circle at 28px 4px, #7dcea0 0 2.5px, transparent 3.2px) 0 0 / 36px 8px repeat-x;
+  filter:drop-shadow(0 0 4px rgba(243,193,90,.75));
+  animation:lights 1.8s ease-in-out infinite;
+}
+html.christmas #rank::after,
+html.christmas #play::after,
+html.christmas #live::after{
+  content:"";
+  position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.9) 0 1.15px, transparent 1.6px),
+    radial-gradient(circle, rgba(255,255,255,.45) 0 1px, transparent 1.5px);
+  background-size:78px 96px, 120px 140px;
+  background-position:8px -30px, 40px -60px;
+  animation:snow 8s linear infinite;
+  -webkit-mask-image:linear-gradient(#000 20%, transparent 85%);
+  mask-image:linear-gradient(#000 20%, transparent 85%);
+}
+html.christmas #play .body,
+html.christmas #live .body,
+html.christmas #rank .head,
+html.christmas #rank .row,
+html.christmas #rank .meta{position:relative;z-index:3}
+html.christmas #live-hp{z-index:4}
+@keyframes lights{50%{opacity:.62;filter:drop-shadow(0 0 2px rgba(226,61,74,.4))}}
+@keyframes snow{to{background-position:8px 96px, 40px 80px}}
+@media (prefers-reduced-motion:reduce){
+  html.christmas #rank::before,
+  html.christmas #play::before,
+  html.christmas #live::before,
+  html.christmas #rank::after,
+  html.christmas #play::after,
+  html.christmas #live::after{animation:none}
+}
 </style>
 </head>
 <body>

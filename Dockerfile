@@ -5,7 +5,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     OSU_HOST=0.0.0.0 \
-    OSU_PORT=8727
+    OSU_PORT=8727 \
+    TZ=America/New_York
 
 WORKDIR /app
 
@@ -16,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
               /usr/local/lib/python3.13/site-packages/wheel* \
               /usr/local/bin/pip* \
     && find /usr/local/lib/python3.13 -depth -type d -name __pycache__ -exec rm -rf {} + \
-    && apk add --no-cache su-exec \
+    && apk add --no-cache su-exec tzdata \
     && adduser -D -H -u 1000 overlay \
     && printf '%s\n' \
          '#!/bin/sh' \

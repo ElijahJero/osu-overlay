@@ -9,6 +9,9 @@ services:
       OSU_PORT: "8727"
       OSU_CLIENT_ID: ${OSU_CLIENT_ID:-}
       OSU_CLIENT_SECRET: ${OSU_CLIENT_SECRET:-}
+      # always, never, or christmas (Dec 15–25: Christmas and the 10 days before)
+      OSU_CHRISTMAS: ${OSU_CHRISTMAS:-christmas}
+      TZ: ${TZ:-America/New_York}
     restart: unless-stopped
     volumes:
       - cache:/app/cache

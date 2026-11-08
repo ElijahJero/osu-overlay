@@ -23,6 +23,10 @@ Run:      python osu_server.py
 Bind address and port default to 127.0.0.1:8727. Set OSU_HOST=0.0.0.0 when
 you want other machines to open the overlay. Set OSU_CLIENT_SECRET in the
 environment before starting; the server exits if it is missing.
+
+OSU_CHRISTMAS selects the Christmas theme: always, never, or christmas.
+christmas is on from December 15 through December 25 (Christmas and the ten
+days before it), using the server's local date.
 """
 import asyncio
 import json
@@ -30,6 +34,7 @@ import os
 import re
 import threading
 import time
+from datetime import date
 from pathlib import Path
 from urllib.parse import quote
 
@@ -48,6 +53,10 @@ CACHE = HERE / "cache"
 MODES = {"osu": "osu", "taiko": "taiko", "fruits": "fruits", "catch": "fruits", "mania": "mania"}
 USER_RE = re.compile(r"^[A-Za-z0-9_\[\] -]{2,15}$")
 IDLE_GRACE = 45
+CHRISTMAS_MODE = os.environ.get("OSU_CHRISTMAS", "christmas").strip().lower()
+if CHRISTMAS_MODE not in {"always", "never", "christmas"}:
+    print(f"OSU_CHRISTMAS={CHRISTMAS_MODE!r} is not always, never, or christmas. Using never.")
+    CHRISTMAS_MODE = "never"
 
 trackers = {}
 trackers_lock = asyncio.Lock()
@@ -477,12 +486,33 @@ async def ws_handler(request):
     return ws
 
 
+def christmas_active(today=None):
+    """Whether the Christmas theme is on for this date.
+
+    `christmas` covers December 15 through December 25: Christmas Day and the
+    ten days before it. `today` follows the server's local clock.
+    """
+    if CHRISTMAS_MODE == "always":
+        return True
+    if CHRISTMAS_MODE == "never":
+        return False
+    today = today or date.today()
+    return today.month == 12 and 15 <= today.day <= 25
+
+
+def themed_page(path):
+    html = path.read_text(encoding="utf-8")
+    if christmas_active():
+        html = html.replace('<html lang="en">', '<html lang="en" class="christmas">', 1)
+    return web.Response(text=html, content_type="text/html", charset="utf-8")
+
+
 async def index(_request):
-    return web.FileResponse(HERE / "overlay.html")
+    return themed_page(HERE / "overlay.html")
 
 
 async def landing(_request):
-    return web.FileResponse(HERE / "home.html")
+    return themed_page(HERE / "home.html")
 
 
 async def main():
@@ -502,6 +532,7 @@ async def main():
     await web.TCPSite(runner, HOST, PORT).start()
     print(f"Overlay: http://{HOST}:{PORT}/YourName")
     print(f"Preview: http://{HOST}:{PORT}/demo")
+    print(f"Christmas theme: {CHRISTMAS_MODE} ({'on' if christmas_active() else 'off'})")
     try:
         await ensure_demo_cache()
     except Exception as e:

@@ -118,6 +118,58 @@ ol strong{color:var(--text)}
   .layout{grid-template-columns:1fr}
   header{align-items:flex-start}
 }
+
+html.christmas{
+  --bg:#0e1813;
+  --bg-2:#1c3024;
+  --pink:#e23d4a;
+  --text:#f7f3ea;
+  --muted:#c9d5c6;
+  --line:rgba(243,193,90,.2);
+  --gold:#f3c15a;
+}
+html.christmas body{
+  background:
+    radial-gradient(820px 380px at 0% -10%, rgba(226,61,74,.24), transparent 60%),
+    radial-gradient(680px 360px at 100% 0%, rgba(243,193,90,.16), transparent 55%),
+    radial-gradient(700px 420px at 70% 120%, rgba(47,107,69,.35), transparent 55%),
+    #0e1813;
+}
+html.christmas body::before{
+  content:"";
+  position:fixed;inset:0;pointer-events:none;z-index:30;
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,.9) 0 1.3px, transparent 1.8px),
+    radial-gradient(circle, rgba(255,255,255,.5) 0 1px, transparent 1.5px);
+  background-size:150px 180px, 230px 260px;
+  background-position:0 0, 60px 40px;
+  animation:snow 14s linear infinite;
+}
+html.christmas .card{
+  background:linear-gradient(180deg,#24382c,#132018);
+  border-color:rgba(243,193,90,.18);
+}
+html.christmas .sample{
+  background:linear-gradient(180deg,#2c4334,#16241c);
+  border-left-color:#e23d4a;
+}
+html.christmas .brand span::before{
+  content:"❄";
+  color:#f3c15a;
+  font-size:15px;
+  letter-spacing:0;
+  margin-right:6px;
+}
+html.christmas a:hover{color:#ff9aa4}
+html.christmas input[type="text"]:focus,
+html.christmas select:focus{outline-color:rgba(226,61,74,.75)}
+html.christmas .ghost:hover,
+html.christmas #open:hover:not(:disabled){border-color:rgba(243,193,90,.55)}
+html.christmas ol li::before{color:#2a1014}
+@keyframes snow{to{background-position:0 180px, 60px 220px}}
+@media (prefers-reduced-motion:reduce){
+  html.christmas body::before{animation:none}
+}
 </style>
 </head>
 <body>
