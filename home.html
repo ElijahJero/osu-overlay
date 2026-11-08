@@ -135,16 +135,21 @@ html.christmas body{
     radial-gradient(700px 420px at 70% 120%, rgba(47,107,69,.35), transparent 55%),
     #0e1813;
 }
-html.christmas body::before{
-  content:"";
-  position:fixed;inset:0;pointer-events:none;z-index:30;
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,.9) 0 1.3px, transparent 1.8px),
-    radial-gradient(circle, rgba(255,255,255,.5) 0 1px, transparent 1.5px);
-  background-size:150px 180px, 230px 260px;
-  background-position:0 0, 60px 40px;
-  animation:snow 14s linear infinite;
+html.christmas .wrap{position:relative;z-index:1}
+.snowfield{position:fixed;inset:0;z-index:5;overflow:hidden;pointer-events:none}
+.snow-clip{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.snow{position:absolute;inset:-12%;transform:translate3d(var(--px,0),calc(var(--py,0px) + var(--sy,0px)),0);transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.snow span{
+  position:absolute;left:var(--x);top:-14%;
+  color:#fff;font-size:var(--s);line-height:1;opacity:var(--o);
+  text-shadow:0 0 8px rgba(255,255,255,.65);
+  animation:snow-fall var(--d) linear var(--delay) infinite;
 }
+.snow span.dot{
+  width:var(--s);height:var(--s);border-radius:50%;background:#fff;font-size:0;
+  box-shadow:0 0 8px rgba(255,255,255,.7);
+}
+.snow.far span{filter:blur(.6px)}
 html.christmas .card{
   background:linear-gradient(180deg,#24382c,#132018);
   border-color:rgba(243,193,90,.18);
@@ -166,9 +171,16 @@ html.christmas select:focus{outline-color:rgba(226,61,74,.75)}
 html.christmas .ghost:hover,
 html.christmas #open:hover:not(:disabled){border-color:rgba(243,193,90,.55)}
 html.christmas ol li::before{color:#2a1014}
-@keyframes snow{to{background-position:0 180px, 60px 220px}}
+@keyframes snow-fall{
+  0%  {top:-14%;transform:translate3d(0,0,0) rotate(0deg)}
+  22% {transform:translate3d(var(--sway),0,0) rotate(18deg)}
+  48% {transform:translate3d(var(--wind),0,0) rotate(-22deg)}
+  73% {transform:translate3d(calc(var(--sway) * -.4),0,0) rotate(12deg)}
+  100%{top:112%;transform:translate3d(var(--drift),0,0) rotate(-16deg)}
+}
 @media (prefers-reduced-motion:reduce){
-  html.christmas body::before{animation:none}
+  .snow span{animation:none}
+  .snow{transition:none}
 }
 </style>
 </head>
@@ -314,6 +326,72 @@ openBtn.addEventListener("click", () => {
 });
 document.getElementById("demo").href = location.origin + "/demo";
 refresh();
+function mountChristmasSnow(){
+  if(!document.documentElement.classList.contains("christmas")) return;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const field = document.createElement("div");
+  field.className = "snowfield";
+  field.setAttribute("aria-hidden", "true");
+  document.body.prepend(field);
+  const depths = [
+    {name:"far", depth:1, size:[11,16], dot:[2.5,4.5], opacity:[.28,.48], dur:[18,30], sway:[18,46], speck:.7},
+    {name:"mid", depth:2, size:[16,24], dot:[3.5,6], opacity:[.5,.75], dur:[11,18], sway:[30,70], speck:.35},
+    {name:"near", depth:3, size:[22,34], dot:[5,7], opacity:[.78,1], dur:[7,12], sway:[40,90], speck:.08},
+  ];
+  const counts = [22, 12, 8];
+  const clip = document.createElement("div");
+  clip.className = "snow-clip";
+  depths.forEach((depth, i) => {
+    const layer = document.createElement("div");
+    layer.className = "snow " + depth.name;
+    layer.dataset.depth = String(depth.depth);
+    for(let k = 0; k < counts[i]; k++){
+      const flake = document.createElement("span");
+      const speck = Math.random() < depth.speck;
+      const dur = rand(depth.dur[0], depth.dur[1]);
+      const sway = rand(depth.sway[0], depth.sway[1]) * (Math.random() < .5 ? -1 : 1);
+      const wind = rand(depth.sway[0], depth.sway[1]) * (Math.random() < .5 ? -1 : 1);
+      if(speck){
+        flake.className = "dot";
+        flake.style.setProperty("--s", rand(depth.dot[0], depth.dot[1]).toFixed(1) + "px");
+      }else{
+        flake.textContent = Math.random() < .5 ? "❄" : "❆";
+        flake.style.setProperty("--s", rand(depth.size[0], depth.size[1]).toFixed(1) + "px");
+      }
+      flake.style.setProperty("--x", rand(-8, 108).toFixed(2) + "%");
+      flake.style.setProperty("--o", rand(depth.opacity[0], depth.opacity[1]).toFixed(2));
+      flake.style.setProperty("--d", dur.toFixed(2) + "s");
+      flake.style.setProperty("--delay", (-Math.random() * dur).toFixed(2) + "s");
+      flake.style.setProperty("--sway", sway.toFixed(1) + "px");
+      flake.style.setProperty("--wind", wind.toFixed(1) + "px");
+      flake.style.setProperty("--drift", (sway * rand(.35, 1.25)).toFixed(1) + "px");
+      if(reduce) flake.style.top = rand(0, 96).toFixed(1) + "%";
+      layer.appendChild(flake);
+    }
+    clip.appendChild(layer);
+  });
+  field.appendChild(clip);
+  if(reduce) return;
+  window.addEventListener("pointermove", (e) => {
+    document.querySelectorAll(".snow").forEach(layer => {
+      const depth = Number(layer.dataset.depth) || 1;
+      const px = (e.clientX / innerWidth - .5) * depth * 22;
+      const py = (e.clientY / innerHeight - .5) * depth * 12;
+      layer.style.setProperty("--px", px.toFixed(1) + "px");
+      layer.style.setProperty("--py", py.toFixed(1) + "px");
+    });
+  }, {passive:true});
+  const onScroll = () => {
+    document.querySelectorAll(".snow").forEach(layer => {
+      const depth = Number(layer.dataset.depth) || 1;
+      layer.style.setProperty("--sy", (scrollY * depth * 0.16).toFixed(1) + "px");
+    });
+  };
+  window.addEventListener("scroll", onScroll, {passive:true});
+  onScroll();
+}
+mountChristmasSnow();
 </script>
 </body>
 </html>

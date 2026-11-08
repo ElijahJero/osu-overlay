@@ -231,8 +231,8 @@ html,body{
 #live-mods:empty{display:none}
 #live-pp{font-size:26px;font-weight:800;line-height:1;color:var(--pink)}
 #live-fc{margin-top:4px;font-size:12px;font-weight:700;color:var(--muted);line-height:1}
-#live-hp{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.1)}
-#live-hp > span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff5d73,#ffd56a 55%,#3ddea0);background-size:390px 100%}
+#live-hp{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.1);container-type:inline-size}
+#live-hp > span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff5d73,#ffd56a 55%,#3ddea0) 0 0 / 100cqw 100% no-repeat}
 @keyframes pulse{50%{transform:scale(1.08);box-shadow:0 0 18px rgba(255,213,106,.75)}}
 #status{
   position:absolute;left:28px;top:28px;display:none;
@@ -287,35 +287,39 @@ html.christmas #live::before{
   filter:drop-shadow(0 0 4px rgba(243,193,90,.75));
   animation:lights 1.8s ease-in-out infinite;
 }
-html.christmas #rank::after,
-html.christmas #play::after,
-html.christmas #live::after{
-  content:"";
-  position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:inherit;
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,.9) 0 1.15px, transparent 1.6px),
-    radial-gradient(circle, rgba(255,255,255,.45) 0 1px, transparent 1.5px);
-  background-size:78px 96px, 120px 140px;
-  background-position:8px -30px, 40px -60px;
-  animation:snow 8s linear infinite;
-  -webkit-mask-image:linear-gradient(#000 20%, transparent 85%);
-  mask-image:linear-gradient(#000 20%, transparent 85%);
-}
 html.christmas #play .body,
 html.christmas #live .body,
 html.christmas #rank .head,
 html.christmas #rank .row,
 html.christmas #rank .meta{position:relative;z-index:3}
 html.christmas #live-hp{z-index:4}
+.snow-clip{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;border-radius:inherit}
+.snow{position:absolute;inset:-18%;transform:translate3d(var(--px,0),calc(var(--py,0px) + var(--sy,0px)),0);transition:transform .8s cubic-bezier(.2,.7,.2,1)}
+.snow span{
+  position:absolute;left:var(--x);top:-14%;
+  color:#fff;font-size:var(--s);line-height:1;opacity:var(--o);
+  text-shadow:0 0 6px rgba(255,255,255,.7);
+  animation:snow-fall var(--d) linear var(--delay) infinite;
+}
+.snow span.dot{
+  width:var(--s);height:var(--s);border-radius:50%;background:#fff;font-size:0;
+  box-shadow:0 0 6px rgba(255,255,255,.75);
+}
+.snow.far span{filter:blur(.45px)}
 @keyframes lights{50%{opacity:.62;filter:drop-shadow(0 0 2px rgba(226,61,74,.4))}}
-@keyframes snow{to{background-position:8px 96px, 40px 80px}}
+@keyframes snow-fall{
+  0%  {top:-14%;transform:translate3d(0,0,0) rotate(0deg)}
+  22% {transform:translate3d(var(--sway),0,0) rotate(18deg)}
+  48% {transform:translate3d(var(--wind),0,0) rotate(-22deg)}
+  73% {transform:translate3d(calc(var(--sway) * -.4),0,0) rotate(12deg)}
+  100%{top:112%;transform:translate3d(var(--drift),0,0) rotate(-16deg)}
+}
 @media (prefers-reduced-motion:reduce){
   html.christmas #rank::before,
   html.christmas #play::before,
   html.christmas #live::before,
-  html.christmas #rank::after,
-  html.christmas #play::after,
-  html.christmas #live::after{animation:none}
+  .snow span{animation:none}
+  .snow{transition:none}
 }
 </style>
 </head>
@@ -617,7 +621,8 @@ function renderLive(ev){
   $("#live-pp").textContent = ev.pp == null ? "—" : `${fmt(Math.round(ev.pp))}pp`;
   $("#live-fc").textContent = ev.fcpp == null ? "" : `fc ${fmt(Math.round(ev.fcpp))}pp`;
   const raw = Number(ev.hp) || 0;
-  const pct = Math.max(0, Math.min(1, raw > 1 ? raw / 200 : raw));
+  // tosu sends 0–100. The demo sends a 0–1 fraction.
+  const pct = Math.max(0, Math.min(1, raw > 1 ? raw / 100 : raw));
   $("#live-hp > span").style.width = `${pct * 100}%`;
 }
 
@@ -788,6 +793,70 @@ if(loc.demo){
 }else{
   document.body.classList.add("waiting");
 }
+function mountChristmasSnow(){
+  if(!document.documentElement.classList.contains("christmas")) return;
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const depths = [
+    {name:"far", depth:1, size:[9,13], dot:[2.5,4.5], opacity:[.28,.5], dur:[16,26], sway:[12,26], speck:.75},
+    {name:"mid", depth:2, size:[12,17], dot:[3.5,5], opacity:[.5,.78], dur:[10,16], sway:[20,42], speck:.4},
+    {name:"near", depth:3, size:[15,20], dot:[4,6], opacity:[.75,.95], dur:[7,11], sway:[26,48], speck:.1},
+  ];
+  function mount(host, counts, motion){
+    if(!host || counts.every(n => !n)) return;
+    const clip = document.createElement("div");
+    clip.className = "snow-clip";
+    clip.setAttribute("aria-hidden", "true");
+    depths.forEach((depth, i) => {
+      const n = counts[i] || 0;
+      if(!n) return;
+      const layer = document.createElement("div");
+      layer.className = "snow " + depth.name;
+      layer.dataset.depth = String(depth.depth);
+      for(let k = 0; k < n; k++){
+        const flake = document.createElement("span");
+        const speck = Math.random() < depth.speck;
+        const dur = rand(depth.dur[0], depth.dur[1]);
+        const sway = rand(depth.sway[0], depth.sway[1]) * motion * (Math.random() < .5 ? -1 : 1);
+        const wind = rand(depth.sway[0], depth.sway[1]) * motion * (Math.random() < .5 ? -1 : 1);
+        if(speck){
+          flake.className = "dot";
+          flake.style.setProperty("--s", rand(depth.dot[0], depth.dot[1]).toFixed(1) + "px");
+        }else{
+          flake.textContent = Math.random() < .5 ? "❄" : "❆";
+          flake.style.setProperty("--s", rand(depth.size[0], depth.size[1]).toFixed(1) + "px");
+        }
+        flake.style.setProperty("--x", rand(-6, 106).toFixed(2) + "%");
+        flake.style.setProperty("--o", rand(depth.opacity[0], depth.opacity[1]).toFixed(2));
+        flake.style.setProperty("--d", dur.toFixed(2) + "s");
+        flake.style.setProperty("--delay", (-Math.random() * dur).toFixed(2) + "s");
+        flake.style.setProperty("--sway", sway.toFixed(1) + "px");
+        flake.style.setProperty("--wind", wind.toFixed(1) + "px");
+        flake.style.setProperty("--drift", (sway * rand(.3, 1.2)).toFixed(1) + "px");
+        if(reduce) flake.style.top = rand(0, 94).toFixed(1) + "%";
+        layer.appendChild(flake);
+      }
+      clip.appendChild(layer);
+    });
+    host.appendChild(clip);
+  }
+  mount(document.querySelector("#rank"), [7, 4, 3], .45);
+  mount(document.querySelector("#play"), [10, 6, 4], .55);
+  mount(document.querySelector("#live"), [8, 5, 3], .5);
+  if(reduce) return;
+  window.addEventListener("pointermove", (e) => {
+    document.querySelectorAll(".snow").forEach(layer => {
+      const depth = Number(layer.dataset.depth) || 1;
+      const box = layer.closest("#rank, #play, #live");
+      const rect = box.getBoundingClientRect();
+      const px = ((e.clientX - rect.left) / (rect.width || 1) - .5) * depth * 16;
+      const py = ((e.clientY - rect.top) / (rect.height || 1) - .5) * depth * 10;
+      layer.style.setProperty("--px", px.toFixed(1) + "px");
+      layer.style.setProperty("--py", py.toFixed(1) + "px");
+    });
+  }, {passive:true});
+}
+mountChristmasSnow();
 </script>
 </body>
 </html>
