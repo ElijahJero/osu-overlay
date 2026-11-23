@@ -59,6 +59,12 @@ input[type="text"],select{
 input[type="text"]:focus,select:focus{outline:2px solid rgba(255,102,171,.7);outline-offset:1px}
 .check{display:flex;gap:10px;align-items:flex-start;margin:16px 0 8px;font-weight:600}
 .check input{margin-top:3px;accent-color:var(--pink)}
+.lobby-fields{
+  margin-top:8px;padding:4px 12px 12px;border-radius:14px;
+  border:1px solid var(--line);background:rgba(0,0,0,.18);
+}
+.lobby-fields[hidden],.lobby-fields [hidden]{display:none}
+.subhint{margin:8px 0 0;color:var(--muted);font-size:13px;line-height:1.45;font-weight:600}
 .err{min-height:1.2em;margin:6px 0 0;color:#ff8d9a;font-size:13px;font-weight:600}
 .urlrow{margin-top:16px}
 #url{
@@ -208,6 +214,43 @@ html.christmas ol li::before{color:#2a1014}
         <option value="mania">osu!mania</option>
       </select>
       <label class="check"><input id="live" type="checkbox" checked> Show the map I’m playing in OBS</label>
+      <label class="check"><input id="lobby" type="checkbox"> Show a lobby for chat</label>
+      <div class="lobby-fields" id="lobby-fields" hidden>
+        <label for="lobby-source">Lobby info</label>
+        <select id="lobby-source">
+          <option value="auto">Fill in from tosu</option>
+          <option value="manual">Type it myself</option>
+        </select>
+        <label for="lobby-pos">Where it sits</label>
+        <select id="lobby-pos">
+          <option value="right">Bottom right</option>
+          <option value="rank">Under the rank card</option>
+          <option value="score">Bottom left, until a score shows</option>
+        </select>
+        <div id="lobby-auto">
+          <label for="lobby-auto-pass">Password, if the room has one</label>
+          <input id="lobby-auto-pass" type="text" autocomplete="off" spellcheck="false" placeholder="Leave empty for a public lobby">
+          <p class="subhint">tosu fills in stable or lazer and the room code while you are in a lobby. It cannot read the password, so type that here if chat needs it. This needs tosu 4.26.3 or newer.</p>
+        </div>
+        <div id="lobby-manual" hidden>
+          <label for="lobby-client">Client</label>
+          <select id="lobby-client">
+            <option value="stable">stable</option>
+            <option value="lazer">lazer</option>
+          </select>
+          <label for="lobby-lock">Who can join</label>
+          <select id="lobby-lock">
+            <option value="public">Public</option>
+            <option value="password">Password</option>
+          </select>
+          <label for="lobby-code">Room code</label>
+          <input id="lobby-code" type="text" autocomplete="off" spellcheck="false" placeholder="847291">
+          <div id="lobby-pass-field">
+            <label for="lobby-pass">Password</label>
+            <input id="lobby-pass" type="text" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+      </div>
       <p class="err" id="err" role="alert"></p>
       <div class="urlrow">
         <label for="url">Browser source URL</label>
@@ -239,7 +282,8 @@ html.christmas ol li::before{color:#2a1014}
       <ul class="points">
         <li><strong>Rank</strong><span>Global rank, country rank, pp, and accuracy. The number ticks when you gain or lose a rank.</span></li>
         <li><strong>Latest score</strong><span>Your most recent pass, including whether it is a new top play.</span></li>
-        <li><strong>Live map</strong><span>The map you are playing right now, from tosu on the streaming PC.</span></li>
+        <li><strong>Live map</strong><span>The map you are playing right now, from tosu on the streaming PC. The pp number glows while the run is still a full combo.</span></li>
+        <li><strong>Lobby</strong><span>Optional. A stable or lazer room code for chat, filled in by tosu or typed by you.</span></li>
       </ul>
     </aside>
   </div>
@@ -249,7 +293,7 @@ html.christmas ol li::before{color:#2a1014}
     <ol>
       <li><div><strong>Copy the link above.</strong> Standard has no extra path. Taiko, catch, and mania add one, such as <span id="mode-example"></span>.</div></li>
       <li><div><strong>Add a Browser source.</strong> Paste the link, set the size to 1920×1080, and leave Local file unchecked. Uncheck “Shutdown source when not visible” so the overlay stays connected when you change scenes.</div></li>
-      <li><div><strong>Leave tosu running if you want the map.</strong> Rank and scores update on their own. The map panel is optional.</div></li>
+      <li><div><strong>Leave tosu running if you want the map or an automatic lobby code.</strong> Rank and scores update on their own. The map panel and the lobby card are optional.</div></li>
     </ol>
   </section>
 
@@ -264,11 +308,32 @@ html.christmas ol li::before{color:#2a1014}
 const userEl = document.getElementById("user");
 const modeEl = document.getElementById("mode");
 const liveEl = document.getElementById("live");
+const lobbyEl = document.getElementById("lobby");
+const lobbyFields = document.getElementById("lobby-fields");
+const sourceEl = document.getElementById("lobby-source");
+const posEl = document.getElementById("lobby-pos");
+const autoBox = document.getElementById("lobby-auto");
+const autoPassEl = document.getElementById("lobby-auto-pass");
+const manualBox = document.getElementById("lobby-manual");
+const clientEl = document.getElementById("lobby-client");
+const lockEl = document.getElementById("lobby-lock");
+const codeEl = document.getElementById("lobby-code");
+const passField = document.getElementById("lobby-pass-field");
+const passEl = document.getElementById("lobby-pass");
 const urlEl = document.getElementById("url");
 const errEl = document.getElementById("err");
 const copyBtn = document.getElementById("copy");
 const openBtn = document.getElementById("open");
 const USER_RE = /^[A-Za-z0-9_\[\] -]{2,15}$/;
+
+function syncLobbyForm(){
+  const on = lobbyEl.checked;
+  const manual = sourceEl.value === "manual";
+  lobbyFields.hidden = !on;
+  autoBox.hidden = !on || manual;
+  manualBox.hidden = !on || !manual;
+  passField.hidden = lockEl.value !== "password";
+}
 
 function overlayUrl(){
   const user = userEl.value.trim();
@@ -283,7 +348,26 @@ function overlayUrl(){
   errEl.textContent = "";
   let url = location.origin + "/" + encodeURIComponent(user);
   if(modeEl.value !== "osu") url += "/" + modeEl.value;
-  if(!liveEl.checked) url += "?live=0";
+  const params = new URLSearchParams();
+  if(!liveEl.checked) params.set("live", "0");
+  if(lobbyEl.checked){
+    const manual = sourceEl.value === "manual";
+    params.set("lobby", manual ? "manual" : "auto");
+    if(posEl.value === "rank" || posEl.value === "score") params.set("pos", posEl.value);
+    if(manual){
+      if(clientEl.value === "lazer") params.set("client", "lazer");
+      const code = codeEl.value.trim();
+      if(code) params.set("code", code);
+      if(lockEl.value === "password"){
+        params.set("lock", "password");
+        if(passEl.value) params.set("pass", passEl.value);
+      }
+    }else if(autoPassEl.value){
+      params.set("pass", autoPassEl.value);
+    }
+  }
+  const query = params.toString();
+  if(query) url += "?" + query;
   return url;
 }
 
@@ -320,10 +404,11 @@ openBtn.addEventListener("click", () => {
 });
 
 ["input", "change"].forEach(type => {
-  userEl.addEventListener(type, refresh);
-  modeEl.addEventListener(type, refresh);
-  liveEl.addEventListener(type, refresh);
+  [userEl, modeEl, liveEl, lobbyEl, sourceEl, posEl, autoPassEl, clientEl, lockEl, codeEl, passEl].forEach(el => {
+    el.addEventListener(type, () => { syncLobbyForm(); refresh(); });
+  });
 });
+syncLobbyForm();
 document.getElementById("demo").href = location.origin + "/demo";
 refresh();
 function mountChristmasSnow(){

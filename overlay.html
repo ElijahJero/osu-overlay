@@ -30,8 +30,13 @@ html,body{
 }
 
 /* ---------- rank card ---------- */
+#rank-stack{
+  position:absolute;left:28px;top:28px;z-index:2;
+  display:flex;flex-direction:column;align-items:flex-start;
+  width:max-content;max-width:calc(100vw - 56px);
+}
 #rank{
-  position:absolute;left:28px;top:28px;
+  position:relative;
   width:max-content;max-width:calc(100vw - 56px);
   padding:14px 18px 13px;
   background:linear-gradient(180deg,var(--bg-2),var(--bg));
@@ -230,10 +235,65 @@ html,body{
 #live-mods{display:inline-flex;align-items:center;gap:4px}
 #live-mods:empty{display:none}
 #live-pp{font-size:26px;font-weight:800;line-height:1;color:var(--pink)}
+#live.fc #live-pp{
+  color:#fff;
+  text-shadow:0 0 10px var(--pink), 0 0 22px rgba(255,102,171,.8);
+  animation:fc-glow 1.6s ease-in-out infinite;
+}
 #live-fc{margin-top:4px;font-size:12px;font-weight:700;color:var(--muted);line-height:1}
+@keyframes fc-glow{
+  50%{text-shadow:0 0 4px var(--pink), 0 0 12px rgba(255,102,171,.35)}
+}
 #live-hp{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.1);container-type:inline-size}
 #live-hp > span{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff5d73,#ffd56a 55%,#3ddea0) 0 0 / 100cqw 100% no-repeat}
 @keyframes pulse{50%{transform:scale(1.08);box-shadow:0 0 18px rgba(255,213,106,.75)}}
+
+/* ---------- lobby card ---------- */
+#lobby{
+  display:none;
+  position:relative;
+  width:min(280px,calc(100vw - 56px));
+  padding:12px 14px 13px;
+  background:linear-gradient(180deg,var(--bg-2),var(--bg));
+  border-radius:16px;border:1px solid var(--line);border-left:3px solid var(--pink);
+  box-shadow:0 14px 36px rgba(0,0,0,.4);
+}
+#lobby.on{display:block}
+#lobby.pos-right,#lobby.pos-score{position:fixed;bottom:28px}
+#lobby.pos-right{right:28px}
+#lobby.pos-score{left:28px;transition:transform .7s cubic-bezier(.2,.9,.2,1)}
+#lobby.pos-score.yield{transform:translateX(calc(-100% - 48px))}
+#lobby.pos-rank{
+  position:absolute;left:50%;top:calc(100% - 12px);z-index:0;
+  transform:translateX(-50%);
+  width:calc(100% - 56px);max-width:calc(100% - 56px);
+  padding:16px 14px 12px;border-radius:0 0 16px 16px;
+  border:1px solid rgba(255,120,180,.85);border-top:0;
+  background:linear-gradient(180deg,#3a2458,#26163c);
+  box-shadow:0 16px 28px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.1);
+}
+#lobby.pos-rank .lobby-row{color:#d7c6ee}
+#lobby.pos-rank .pill{
+  height:22px;padding:0 8px;font-size:12px;
+  background:rgba(255,102,171,.14);color:#ffd4e8;
+  border:1px solid rgba(255,102,171,.32);
+}
+#rank-stack:has(#lobby.pos-rank.on) #rank{position:relative;z-index:1}
+#lobby.pos-rank.has-pass #lobby-lock{display:none}
+.lobby-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+#lobby .label{margin:0}
+#lobby.pos-rank .lobby-head{margin-bottom:2px}
+#lobby.pos-rank .lobby-row{margin-top:4px;font-size:12px}
+#lobby.pos-rank .lobby-row strong{font-size:15px}
+.lobby-row{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin-top:8px;font-size:14px;font-weight:700;color:var(--muted);
+}
+.lobby-row strong{
+  color:var(--text);font-size:18px;font-weight:800;letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;text-align:right;word-break:break-all;
+}
+.lobby-row[hidden]{display:none}
 #status{
   position:absolute;left:28px;top:28px;display:none;
   padding:12px 16px;border-radius:12px;background:var(--bg);color:var(--muted);
@@ -242,8 +302,8 @@ html,body{
 body.waiting #status{display:block}
 body.waiting #rank{display:none}
 @media (prefers-reduced-motion:reduce){
-  .strip,#play,#delta,#live{transition-duration:.01s}
-  #badge.first{animation:none}
+  .strip,#play,#delta,#live,#lobby.pos-score{transition-duration:.01s}
+  #badge.first,#live.fc #live-pp{animation:none}
 }
 
 /* Christmas: pine cards, cranberry and gold, lights and snow on the cards only */
@@ -258,12 +318,32 @@ html.christmas{
 }
 html.christmas #rank,
 html.christmas #play,
-html.christmas #live{
+html.christmas #live,
+html.christmas #lobby{
   background:linear-gradient(180deg,#2a4032,#142018);
   box-shadow:0 16px 36px rgba(0,0,0,.42), inset 0 0 0 1px rgba(243,193,90,.1);
 }
 html.christmas #rank,
-html.christmas #play{border-left-color:#e23d4a}
+html.christmas #play,
+html.christmas #lobby{border-left-color:#e23d4a}
+html.christmas #lobby.pos-rank{
+  background:linear-gradient(180deg,#2e4a3a,#1c3026);
+  border:1px solid rgba(243,193,90,.8);border-top:0;
+  box-shadow:0 16px 28px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,244,214,.12);
+}
+html.christmas #lobby.pos-rank .lobby-row{color:#e4f0e4}
+html.christmas #lobby.pos-rank .pill{
+  background:rgba(243,193,90,.14);color:#ffe7a8;
+  border-color:rgba(243,193,90,.4);
+}
+html.christmas #live.fc #live-pp{
+  color:#fff8e8;
+  text-shadow:0 0 10px #f3c15a, 0 0 24px rgba(243,193,90,.85);
+}
+html.christmas #live.fc #live-pp{animation-name:fc-glow-gold}
+@keyframes fc-glow-gold{
+  50%{text-shadow:0 0 4px #f3c15a, 0 0 12px rgba(243,193,90,.4)}
+}
 html.christmas #live{border-right-color:#f3c15a}
 html.christmas #rank.up{border-left-color:var(--up);box-shadow:0 0 0 1px rgba(61,222,160,.35),0 14px 36px rgba(0,0,0,.38)}
 html.christmas #rank.down{border-left-color:var(--down);box-shadow:0 0 0 1px rgba(255,93,115,.35),0 14px 36px rgba(0,0,0,.38)}
@@ -277,7 +357,8 @@ html.christmas #badge{color:#2a1014}
 html.christmas #badge.first{color:#3a2a00}
 html.christmas #rank::before,
 html.christmas #play::before,
-html.christmas #live::before{
+html.christmas #live::before,
+html.christmas #lobby:not(.pos-rank)::before{
   content:"";
   position:absolute;left:16px;right:16px;top:5px;height:8px;z-index:4;pointer-events:none;
   background:
@@ -289,9 +370,12 @@ html.christmas #live::before{
 }
 html.christmas #play .body,
 html.christmas #live .body,
+html.christmas #lobby .lobby-head,
+html.christmas #lobby .lobby-row,
 html.christmas #rank .head,
 html.christmas #rank .row,
 html.christmas #rank .meta{position:relative;z-index:3}
+html.christmas #lobby:not(.pos-rank){padding-top:18px}
 html.christmas #live-hp{z-index:4}
 .snow-clip{position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none;border-radius:inherit}
 .snow{position:absolute;inset:-18%;transform:translate3d(var(--px,0),calc(var(--py,0px) + var(--sy,0px)),0);transition:transform .8s cubic-bezier(.2,.7,.2,1)}
@@ -318,6 +402,7 @@ html.christmas #live-hp{z-index:4}
   html.christmas #rank::before,
   html.christmas #play::before,
   html.christmas #live::before,
+  html.christmas #lobby:not(.pos-rank)::before,
   .snow span{animation:none}
   .snow{transition:none}
 }
@@ -326,6 +411,7 @@ html.christmas #live-hp{z-index:4}
 <body>
 <div id="status">Add your osu! name to the URL. This server’s home page has the link.</div>
 
+<div id="rank-stack">
 <div id="rank">
   <div class="head">
     <img id="avatar" alt="" hidden>
@@ -343,6 +429,16 @@ html.christmas #live-hp{z-index:4}
     <span class="pill acc" id="accstat" hidden></span>
   </div>
   <div id="delta"></div>
+</div>
+<div id="lobby">
+  <div class="lobby-head">
+    <div class="label">Lobby</div>
+    <span class="pill" id="lobby-client">stable</span>
+    <span class="pill" id="lobby-lock">Public</span>
+  </div>
+  <div class="lobby-row"><span>Code</span><strong id="lobby-code"></strong></div>
+  <div class="lobby-row" id="lobby-pass-row" hidden><span>Password</span><strong id="lobby-pass"></strong></div>
+</div>
 </div>
 
 <div id="live">
@@ -600,11 +696,12 @@ function paintMods(host, mods){
 function renderLive(ev){
   const panel = $("#live");
   if(!ev || !ev.active){
-    panel.classList.remove("on", "fail");
+    panel.classList.remove("on", "fail", "fc");
     return;
   }
   panel.classList.add("on");
   panel.classList.toggle("fail", !!ev.failed);
+  panel.classList.toggle("fc", !!ev.fc);
   $("#live-phase").textContent = ev.failed ? "Failed" : (ev.phase === "result" ? "Result" : "Live");
   $("#live-art").style.backgroundImage = ev.cover ? `url("${ev.cover}")` : "none";
   const grade = $("#live-grade");
@@ -640,13 +737,41 @@ function modList(mods){
   if(mods.array) return modList(mods.array);
   return [];
 }
+let liveFc = false;
+function cleanHits(hits){
+  const misses = Number(hits && (hits[0] ?? hits["0"]) || 0);
+  const breaks = Number(hits && hits.sliderBreaks || 0);
+  return misses === 0 && breaks === 0;
+}
+function runIsFc(data, phase, play){
+  const hits = play.hits || {};
+  if(play.failed){
+    liveFc = false;
+    return false;
+  }
+  if(phase === "play"){
+    const combo = Number((play.combo || {}).current || 0);
+    liveFc = combo > 0 && cleanHits(hits);
+    return liveFc;
+  }
+  const screen = data.resultsScreen || {};
+  const screenHits = screen.hits || hits;
+  if(!cleanHits(screenHits) || !cleanHits(hits)) return false;
+  const mapMax = Number(((data.beatmap || {}).stats || {}).maxCombo || 0);
+  const got = Number(screen.maxCombo || (play.combo || {}).max || 0);
+  if(mapMax > 0 && got > 0) return got >= mapMax;
+  return liveFc;
+}
 function parseTosu(data){
   const state = data.state || {};
   const name = String(state.name || "").toLowerCase();
   const number = state.number;
   const playing = name === "play" || number === 2;
   const results = name === "resultscreen" || name === "ranking" || number === 7;
-  if(!playing && !results) return {active:false};
+  if(!playing && !results){
+    liveFc = false;
+    return {active:false};
+  }
   const beatmap = data.beatmap || {};
   const play = data.play || {};
   const stars = ((beatmap.stats || {}).stars) || {};
@@ -658,10 +783,12 @@ function parseTosu(data){
   let hp = health.smooth;
   if(hp == null) hp = health.normal || 0;
   const id = beatmap.id || 0;
+  const phase = results ? "result" : "play";
   return {
     active:true,
-    phase: results ? "result" : "play",
+    phase,
     failed: !!play.failed,
+    fc: runIsFc(data, phase, play),
     title: beatmap.title || "",
     artist: beatmap.artist || "",
     diff: beatmap.version || "",
@@ -679,13 +806,18 @@ function parseTosu(data){
 }
 let tosuStarted = false;
 function tosuEnabled(){
-  const live = new URLSearchParams(location.search).get("live");
-  if(live === "0") return false;
+  const q = new URLSearchParams(location.search);
+  const live = q.get("live");
+  const lobbyAuto = q.get("lobby") === "auto";
+  if(live === "0" && !lobbyAuto) return false;
   if(live === "1") return true;
   // https pages may not open ws://127.0.0.1. OBS browser sources can, and they
   // expose window.obsstudio. A normal tab stays quiet instead of retrying forever.
   if(location.protocol !== "https:") return true;
   return typeof window.obsstudio !== "undefined";
+}
+function liveMapEnabled(){
+  return new URLSearchParams(location.search).get("live") !== "0";
 }
 function connectTosu(){
   if(tosuStarted || !tosuEnabled()) return false;
@@ -696,8 +828,10 @@ function connectTosu(){
     ws.onmessage = e => {
       let data;
       try { data = JSON.parse(e.data); } catch { return; }
+      applyAutoLobby(data);
+      if(!liveMapEnabled()) return;
       const ev = parseTosu(data);
-      const sig = JSON.stringify([ev.active, ev.beatmap_id, ev.diff, ev.combo, ev.grade, Math.round((ev.pp || 0) * 10), Math.round((ev.acc || 0) * 100), Math.round((ev.hp || 0) * 1000), ev.failed, ev.phase, (ev.mods || []).join()]);
+      const sig = JSON.stringify([ev.active, ev.fc, ev.beatmap_id, ev.diff, ev.combo, ev.grade, Math.round((ev.pp || 0) * 10), Math.round((ev.acc || 0) * 100), Math.round((ev.hp || 0) * 1000), ev.failed, ev.phase, (ev.mods || []).join()]);
       if(sig === last) return;
       last = sig;
       renderLive(ev);
@@ -742,11 +876,11 @@ function runDemo(art, rank){
   const play = {...song, grade:"S", acc:98.72, combo:2144, pp:412, mods:["HD","HR"], pos:3};
   if(rank){
     push({type:"play", ...play});
-    renderLive({type:"live", active:true, phase:"play", ...song, grade:"S", acc:98.72, combo:860, max_combo:2400, pp:280, fcpp:340, hp:0.78, mods:["HD","HR"]});
+    renderLive({type:"live", active:true, phase:"play", fc:true, ...song, grade:"S", acc:98.72, combo:860, max_combo:2400, pp:280, fcpp:340, hp:0.78, mods:["HD","HR"]});
     return;
   }
   fillPlay(play);
-  renderLive({type:"live", active:true, phase:"play", ...song, grade:"S", acc:97.4, combo:640, max_combo:2400, pp:248, fcpp:336, hp:0.82, mods:["HD","HR"]});
+  renderLive({type:"live", active:true, phase:"play", fc:true, ...song, grade:"S", acc:97.4, combo:640, max_combo:2400, pp:248, fcpp:336, hp:0.82, mods:["HD","HR"]});
   const gained = Math.max(1, start - 1480);
   const lost = gained + 2360;
   setTimeout(() => {
@@ -780,14 +914,111 @@ function fillPlay(ev){
 
 document.fonts.ready.then(() => { if(shown){ const s = shown; shown = ""; setRankDisplay(Number(s.replace(/,/g, "")), false); } });
 
+function lobbyConfig(){
+  const q = new URLSearchParams(location.search);
+  const mode = q.get("lobby");
+  if(mode !== "auto" && mode !== "manual") return null;
+  const pos = q.get("pos");
+  return {
+    mode,
+    position: pos === "rank" || pos === "score" ? pos : "right",
+    client: q.get("client") === "lazer" ? "lazer" : "stable",
+    lock: q.get("lock") === "password" ? "password" : "public",
+    code: q.get("code") || "",
+    pass: q.get("pass") || "",
+  };
+}
+let lobbyCfg = null;
+let yieldTimer = 0;
+function placeLobby(){
+  const card = $("#lobby");
+  card.classList.remove("pos-right", "pos-rank", "pos-score", "yield");
+  if(lobbyCfg) card.classList.add("pos-" + lobbyCfg.position);
+}
+function showLobby(info){
+  const card = $("#lobby");
+  const pass = info.pass || "";
+  const locked = info.lock === "password" || !!pass;
+  $("#lobby-client").textContent = info.client === "lazer" ? "lazer" : "stable";
+  $("#lobby-lock").textContent = locked ? "Password" : "Public";
+  $("#lobby-code").textContent = info.code || "";
+  const row = $("#lobby-pass-row");
+  const showPass = locked && !!pass;
+  if(showPass){
+    $("#lobby-pass").textContent = pass;
+    row.hidden = false;
+  }else{
+    $("#lobby-pass").textContent = "";
+    row.hidden = true;
+  }
+  card.classList.toggle("has-pass", showPass);
+  card.classList.add("on");
+  syncLobbyYield();
+}
+function hideLobby(){
+  const card = $("#lobby");
+  card.classList.remove("on", "yield", "has-pass");
+}
+function applyAutoLobby(data){
+  if(!lobbyCfg || lobbyCfg.mode !== "auto") return;
+  const room = data && data.room;
+  const id = room && typeof room === "object" ? Number(room.roomID) : 0;
+  if(!id){
+    hideLobby();
+    return;
+  }
+  const client = String((data && data.client) || "").toLowerCase() === "lazer" ? "lazer" : "stable";
+  showLobby({
+    client,
+    code: String(id),
+    pass: lobbyCfg.pass,
+    lock: lobbyCfg.pass ? "password" : "public",
+  });
+}
+function syncLobbyYield(){
+  const play = $("#play");
+  const card = $("#lobby");
+  clearTimeout(yieldTimer);
+  if(!card.classList.contains("on") || !card.classList.contains("pos-score")){
+    card.classList.remove("yield");
+    return;
+  }
+  if(play.classList.contains("in")){
+    card.classList.add("yield");
+    return;
+  }
+  if(!card.classList.contains("yield")) return;
+  yieldTimer = setTimeout(() => card.classList.remove("yield"), 750);
+}
+function armLobby(demo){
+  lobbyCfg = lobbyConfig();
+  placeLobby();
+  if(!lobbyCfg) return;
+  if(lobbyCfg.mode === "manual"){
+    showLobby(lobbyCfg);
+    return;
+  }
+  if(demo){
+    showLobby({
+      client: "stable",
+      code: "847291",
+      pass: lobbyCfg.pass,
+      lock: lobbyCfg.pass ? "password" : "public",
+    });
+  }
+}
+new MutationObserver(syncLobbyYield).observe($("#play"), {attributes:true, attributeFilter:["class"]});
+
 const loc = parseLocation();
 if(loc.demo){
   const preview = new URLSearchParams(location.search).get("rank");
   fetch("/api/demo").then(r => r.json()).then(art => runDemo(art || {}, preview)).catch(() => runDemo({}, preview));
+  armLobby(true);
 }else if(loc.user && location.protocol.startsWith("http")){
   $("#mode").textContent = MODES[loc.mode];
   $("#uname").textContent = loc.user;
   document.title = `${loc.user} · osu overlay`;
+  armLobby(false);
   connect(loc);
   armTosu();
 }else{
@@ -843,11 +1074,12 @@ function mountChristmasSnow(){
   mount(document.querySelector("#rank"), [7, 4, 3], .45);
   mount(document.querySelector("#play"), [10, 6, 4], .55);
   mount(document.querySelector("#live"), [8, 5, 3], .5);
+  mount(document.querySelector("#lobby"), [6, 3, 2], .4);
   if(reduce) return;
   window.addEventListener("pointermove", (e) => {
     document.querySelectorAll(".snow").forEach(layer => {
       const depth = Number(layer.dataset.depth) || 1;
-      const box = layer.closest("#rank, #play, #live");
+      const box = layer.closest("#rank, #play, #live, #lobby");
       const rect = box.getBoundingClientRect();
       const px = ((e.clientX - rect.left) / (rect.width || 1) - .5) * depth * 16;
       const py = ((e.clientY - rect.top) / (rect.height || 1) - .5) * depth * 10;
